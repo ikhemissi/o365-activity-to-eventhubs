@@ -1,0 +1,17 @@
+{
+  "name": "o365-activity-to-eventhubs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.1",
+    "@azure/msal-node": "^2.13.1"
+  },
+  "devDependencies": {
+    "azure-functions-core-tools": "^4.x"
+  }
+}
