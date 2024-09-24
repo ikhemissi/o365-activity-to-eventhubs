@@ -1,8 +1,8 @@
 const msal = require('@azure/msal-node');
 
 const {
-    ENTRA_CLIENT_ID,
-    ENTRA_CLIENT_SECRET,
+    ENTRA_APP_CLIENT_ID,
+    ENTRA_APP_CLIENT_SECRET,
     ENTRA_LOGIN_URL,
     ENTRA_TENANT_ID,
     O365_MANAGEMENT_API,
@@ -30,9 +30,9 @@ class O365Client {
         this.publisher = ENTRA_TENANT_ID;
         this.cca = new msal.ConfidentialClientApplication({
             auth: {
-                clientId: ENTRA_CLIENT_ID,
+                clientId: ENTRA_APP_CLIENT_ID,
                 authority: `${ENTRA_LOGIN_URL}/${ENTRA_TENANT_ID}`,
-                clientSecret: ENTRA_CLIENT_SECRET,
+                clientSecret: ENTRA_APP_CLIENT_SECRET,
            }
         });
     }

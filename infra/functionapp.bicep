@@ -60,14 +60,14 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsights.properties.ConnectionString
         }
-        // {
-        //   name: '_ENABLE_ORYX_BUILD'
-        //   value: 'true'
-        // }
-        // {
-        //   name: '_SCM_DO_BUILD_DURING_DEPLOYMENT'
-        //   value: 'true'
-        // }
+        {
+          name: 'ENABLE_ORYX_BUILD'
+          value: 'true'
+        }
+        {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
+        }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: runtimeName

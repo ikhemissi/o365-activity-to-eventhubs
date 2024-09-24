@@ -11,6 +11,14 @@ param location string
 @description('Event Hubs name')
 param eventHubName string = 'o365events'
 
+@description('App registration client ID')
+@secure()
+param entraAppClientId string
+
+@description('App registration client secret')
+@secure()
+param entraAppClientSecret string
+
 var resourceToken = toLower(uniqueString(subscription().id, name, location))
 var tags = { 'azd-env-name': name }
 
@@ -58,12 +66,12 @@ module indexerFunctionApp './functionapp.bicep' = {
     tags: tags
     environmentVariables: [
       {
-        name: 'ENTRA_CLIENT_ID'
-        value: ''
+        name: 'ENTRA_APP_CLIENT_ID'
+        value: entraAppClientId
       }
       {
-        name: 'ENTRA_CLIENT_SECRET'
-        value: ''
+        name: 'ENTRA_APP_CLIENT_SECRET'
+        value: entraAppClientSecret
       }
       {
         name: 'ENTRA_LOGIN_URL'
@@ -92,6 +100,10 @@ module indexerFunctionApp './functionapp.bicep' = {
       {
         name: 'EVENT_HUB_NAME'
         value: eventHubName
+      }
+      {
+        name: 'INDEXER_SCHEDULE'
+        value: ''
       }
     ]
   }
