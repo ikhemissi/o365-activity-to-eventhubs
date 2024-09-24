@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: o365-activity-to-eventhubs
+metadata:
+    template: azd-init@1.10.1
+services:
+    indexer:
+        project: ./services/indexer
+        host: function
+        language: js

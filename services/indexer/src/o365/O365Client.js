@@ -1,5 +1,4 @@
 const msal = require('@azure/msal-node');
-const {extractArrayFromEnvVariable} = require('./utils');
 
 const {
     ENTRA_CLIENT_ID,

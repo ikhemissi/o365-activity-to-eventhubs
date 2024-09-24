@@ -1,6 +1,11 @@
 const { app, input, output } = require('@azure/functions');
 const O365Client = require('../o365/O365Client');
 
+const {
+    EVENT_HUB_NAME,
+    INDEXER_SCHEDULE,
+} = process.env;
+
 const blobInput = input.storageBlob({
     path: 'o365state/last_successfull_fetch_on',
     connection: 'AzureWebJobsStorage',
@@ -12,12 +17,12 @@ const blobOutput = output.storageBlob({
 });
 
 const eventHubOutput = output.eventHub({
-    eventHubName: process.env.EVENT_HUB_NAME || 'o365events',
+    eventHubName: EVENT_HUB_NAME || 'o365events',
     connection: 'EventHub',
 });
 
 app.timer('eventindexer', {
-    schedule: '0 */5 * * * *',
+    schedule: INDEXER_SCHEDULE || '0 */5 * * * *', // fallback to running every 5 minutes
     extraInputs: [blobInput],
     extraOutputs: [eventHubOutput],
     return: blobOutput,
@@ -30,15 +35,17 @@ app.timer('eventindexer', {
         const startTime = lastSuccessDate.toISOString().split('.')[0];
         const endTime = now.toISOString().split('.')[0];
 
-        context.log(`Fetching o365 events between ${startTime} and ${endTime}`);	
+        context.info(`Fetching o365 events between ${startTime} and ${endTime}`);	
 
         try {
             const events = await client.getActivityFeedEvents(startTime, endTime);
 
             // TODO: check if events can be objects or if they must be strings
             context.extraOutputs.set(eventHubOutput, events);
+
+            context.info(`${events.length} o365 events were found between ${startTime} and ${endTime}`);
         } catch (error) {
-            context.log.error(`Error fetching o365 events between ${startTime} and ${endTime}: ${error}`);
+            context.error(`Error fetching o365 events between ${startTime} and ${endTime}: ${error}`);
         }
 
         return `${now.toISOString()}`; // new success date
