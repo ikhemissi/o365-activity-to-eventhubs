@@ -133,8 +133,22 @@ class O365Client {
         }
 
         const response = await fetch(url, options);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data from ${url}. Status: ${response.status}`);
+        }
+
+        let data = [];
+
+        try {
+            data = await response.json();
+        }
+        catch (error) {
+            throw new Error(`Failed to parse response from ${url}. Error: ${error.message}`);
+        }
+
         return {
-            data: await response.json(),
+            data,
             headers: response.headers,
         };
     }

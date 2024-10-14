@@ -45,7 +45,7 @@ app.timer('eventindexer', {
 
             context.info(`${events.length} o365 events were found between ${startTime} and ${endTime}`);
         } catch (error) {
-            context.error(`Error fetching o365 events between ${startTime} and ${endTime}: ${error}`);
+            context.error(`Error fetching o365 events between ${startTime} and ${endTime}: ${error.message}`);
         }
 
         return `${now.toISOString()}`; // new success date
