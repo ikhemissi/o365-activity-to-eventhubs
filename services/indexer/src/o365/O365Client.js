@@ -135,7 +135,7 @@ class O365Client {
         const response = await fetch(url, options);
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch data from ${url}. Status: ${response.status}`);
+            throw new Error(`Failed to fetch data from ${url}. Status: ${response.status}. Content: ${await response.text()}`);
         }
 
         let data = [];
