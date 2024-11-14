@@ -42,3 +42,9 @@ azd deploy
 ```
 
 Once the timer function gets triggered you should start getting new O365 audit events in Event Hubs.
+
+## TODO
+
+- [] Support Exchange Message Traces
+- [] Better setup documentation
+- [] Use KV to sign authentication claims
