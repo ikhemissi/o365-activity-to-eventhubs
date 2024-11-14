@@ -1,9 +1,11 @@
 const msal = require('@azure/msal-node');
+const AppRegistrationClient = require('../auth/AppRegistrationClient');
 
 const {
     ENTRA_APP_CLIENT_ID,
     ENTRA_APP_CLIENT_SECRET,
-    ENTRA_LOGIN_URL,
+    ENTRA_APP_CLIENT_CERTIFICATE_NAME,
+    ENTRA_APP_CLIENT_CERTIFICATE_KEYVAULT_NAME,
     ENTRA_TENANT_ID,
     O365_MANAGEMENT_API,
     O365_EVENT_TYPES,
@@ -28,12 +30,14 @@ class O365Client {
         this.eventTypes = this.getEventTypes();
         this.ignoredSources = this.getIgnoredSources();
         this.publisher = ENTRA_TENANT_ID;
-        this.cca = new msal.ConfidentialClientApplication({
-            auth: {
-                clientId: ENTRA_APP_CLIENT_ID,
-                authority: `${ENTRA_LOGIN_URL}/${ENTRA_TENANT_ID}`,
-                clientSecret: ENTRA_APP_CLIENT_SECRET,
-           }
+        this.appRegistrationClient = new AppRegistrationClient({
+            clientId: ENTRA_APP_CLIENT_ID,
+            tenantId: ENTRA_TENANT_ID,
+            vaultName: ENTRA_APP_CLIENT_CERTIFICATE_KEYVAULT_NAME,
+            certificateName: ENTRA_APP_CLIENT_CERTIFICATE_NAME,
+            scopes: [
+                `${O365_MANAGEMENT_API}/.default`
+            ],
         });
     }
 
@@ -104,22 +108,12 @@ class O365Client {
         return extractArrayFromEnvVariable(O365_IGNORED_SOURCES, defaultIgnoredSources);
     }
 
-    async getAccessToken() {
-        const tokenRequest = {
-            scopes: [
-                `${O365_MANAGEMENT_API}/.default`
-            ],
-        };
-        
-        return this.cca.acquireTokenByClientCredential(tokenRequest);
-    }
-
     activityEndpointUrl(endpoint) {
         return `${O365_MANAGEMENT_API}/api/v1.0/${ENTRA_TENANT_ID}/activity/feed${endpoint}`;
     }
 
     async request(url, method = 'GET', body = null) {
-        const token = await this.getAccessToken();
+        const token = await this.appRegistrationClient.getToken();
         const options = {
             method,
             headers: {

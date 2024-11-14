@@ -1,5 +1,5 @@
 const { app, input, output } = require('@azure/functions');
-const O365Client = require('../o365/O365Client');
+const ManagementApiClient = require('../o365/ManagementApiClient');
 
 const {
     EVENT_HUB_NAME,
@@ -21,7 +21,7 @@ const eventHubOutput = output.eventHub({
     connection: 'EventHub',
 });
 
-app.timer('eventindexer', {
+app.timer('fetchAuditLogs', {
     schedule: INDEXER_SCHEDULE || '0 */5 * * * *', // fallback to running every 5 minutes
     extraInputs: [blobInput],
     extraOutputs: [eventHubOutput],
@@ -31,7 +31,7 @@ app.timer('eventindexer', {
         const lastSuccessDateRaw = context.extraInputs.get(blobInput);
         const lastSuccessDate = lastSuccessDateRaw ? new Date(lastSuccessDateRaw) : new Date(now.getTime() - 24 * 3600 * 1000); // fallback to 24 hours ago
 
-        const client = new O365Client();
+        const client = new ManagementApiClient();
         const startTime = lastSuccessDate.toISOString().split('.')[0];
         const endTime = now.toISOString().split('.')[0];
 
@@ -40,7 +40,6 @@ app.timer('eventindexer', {
         try {
             const events = await client.getActivityFeedEvents(startTime, endTime);
 
-            // TODO: check if events can be objects or if they must be strings
             context.extraOutputs.set(eventHubOutput, events);
 
             context.info(`${events.length} o365 events were found between ${startTime} and ${endTime}`);

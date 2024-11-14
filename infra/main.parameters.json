@@ -11,8 +11,14 @@
         "entraAppClientId": {
             "value": "${ENTRA_APP_CLIENT_ID}"
         },
-        "entraAppClientSecret": {
-            "value": "${ENTRA_APP_CLIENT_SECRET}"
+        "principalId": {
+            "value": "${AZURE_PRINCIPAL_ID}"
+        },
+        "runningOnGh": {
+            "value": "${GITHUB_ACTIONS}"
+        },
+        "runningOnAdo": {
+            "value": "${TF_BUILD}"
         }
     }
 }

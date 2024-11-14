@@ -13,6 +13,12 @@ You need an Azure subscription for deploying Event Hubs, Azure Functions, and ot
 An App registration which grants access to the O365 management api.
 Please follow [this guide](https://learn.microsoft.com/en-us/office/office-365-management-api/get-started-with-office-365-management-apis) to create the App registration and to understand how the process works.
 
+Once you have created the App Registration, please [upload a PEM certificate] to the App Registration's certificates(https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app?tabs=certificate#add-credentials) to allow authentication with certificates instead of secrets.
+The Function App will fetch the certificate from a KeyVault, so you can either create it directly in the KeyVault, or you can [import an existing certificate](https://learn.microsoft.com/en-us/azure/key-vault/certificates/tutorial-import-certificate?tabs=azure-portal#import-a-certificate-to-your-key-vault) to it.
+
+> [!IMPORTANT]  
+> The Certificate must be in the PEM format
+
 #### Development environment
 
 You can use the provided Github codespace for a fast-start experience, it includes all the required tools.
@@ -24,11 +30,12 @@ Create the resources on Azure:
 
 ```bash
 ENTRA_APP_CLIENT_ID=REPLACE_WITH_CLIENT_ID \
-ENTRA_APP_CLIENT_SECRET=REPLACE_WITH_CLIENT_SECRET \
 azd provision
 ```
 
-Then deploy the code of the data indexing function:
+Then make sure the PEM certificate exists in the KeyVault and it was added to the App Registration.
+
+Finally deploy the code of the data indexing function:
 
 ```bash
 azd deploy

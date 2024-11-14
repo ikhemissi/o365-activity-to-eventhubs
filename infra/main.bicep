@@ -19,6 +19,17 @@ param entraAppClientId string
 @secure()
 param entraAppClientSecret string
 
+@description('Id of the user or app to assign application roles')
+param principalId string = ''
+
+@description('Whether the deployment is running on GitHub Actions')
+param runningOnGh string = ''
+
+@description('Whether the deployment is running on Azure DevOps Pipeline')
+param runningOnAdo string = ''
+
+var principalType = empty(runningOnGh) && empty(runningOnAdo) ? 'User' : 'ServicePrincipal'
+
 var resourceToken = toLower(uniqueString(subscription().id, name, location))
 var tags = { 'azd-env-name': name }
 
@@ -26,15 +37,18 @@ var prefix = '${name}-${resourceToken}'
 
 // https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#storage-blob-data-owner
 var storageBlobDataOwnerRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')
-var storageFunctionRoleAssignment = guid(resourceGroup().id, storageBlobDataOwnerRoleId)
 
 // https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#azure-event-hubs-data-sender
 var eventHubDataSenderRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2b629674-e913-4c01-ae53-ef4638d8f975')
-var eventHubFunctionRoleAssignment = guid(resourceGroup().id, eventHubDataSenderRoleId)
 
 // https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/monitor#monitoring-metrics-publisher
 var metricsPublisherRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')
-var appInsightsFunctionRoleAssignment = guid(resourceGroup().id, metricsPublisherRoleId)
+
+// https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/security#key-vault-certificate-user
+var keyvaultCertificateUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'db79e9a7-68ee-4b58-9aeb-b90e7c24fcba')
+
+// https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/security#key-vault-certificate-officer
+var keyvaultCertificateOfficerRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a4417e6f-fecd-4de8-b567-7b0420556985')
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: '${toLower(take(replace(prefix, '-', ''), 17))}sto'
@@ -70,12 +84,12 @@ module indexerFunctionApp './functionapp.bicep' = {
         value: entraAppClientId
       }
       {
-        name: 'ENTRA_APP_CLIENT_SECRET'
-        value: entraAppClientSecret
+        name: 'ENTRA_APP_CLIENT_CERTIFICATE_NAME'
+        value: 'o365-management-api-appreg-certificate'
       }
       {
-        name: 'ENTRA_LOGIN_URL'
-        value: 'https://login.microsoftonline.com'
+        name: 'ENTRA_APP_CLIENT_CERTIFICATE_KEYVAULT_NAME'
+        value: keyVault.outputs.name
       }
       {
         name: 'ENTRA_TENANT_ID'
@@ -128,9 +142,18 @@ module eventHub './eventhubs.bicep' = {
   }
 }
 
+module keyVault './keyvault.bicep' = {
+  name: 'keyVault'
+  params: {
+    name: take('${prefix}-kv', 24)
+    location: location
+    tags: tags
+  }
+}
+
 // Storage Blob Data Owner
 resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: storageFunctionRoleAssignment
+  name: guid(resourceGroup().id, storageBlobDataOwnerRoleId)
   properties: {
     principalId: indexerFunctionApp.outputs.principalId
     roleDefinitionId: storageBlobDataOwnerRoleId
@@ -140,7 +163,7 @@ resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-
 
 // Event Hubs Data Sender
 resource eventHubRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: eventHubFunctionRoleAssignment
+  name: guid(resourceGroup().id, eventHubDataSenderRoleId)
   properties: {
     principalId: indexerFunctionApp.outputs.principalId
     roleDefinitionId: eventHubDataSenderRoleId
@@ -149,9 +172,28 @@ resource eventHubRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04
 
 // Monitoring Metrics Publisher
 resource metricsPublisherRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: appInsightsFunctionRoleAssignment
+  name: guid(resourceGroup().id, metricsPublisherRoleId)
   properties: {
     principalId: indexerFunctionApp.outputs.principalId
     roleDefinitionId: metricsPublisherRoleId
+  }
+}
+
+// Key Vault Certificate User
+resource keyvaultCertificateUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, keyvaultCertificateUserRoleId)
+  properties: {
+    principalId: indexerFunctionApp.outputs.principalId
+    roleDefinitionId: keyvaultCertificateUserRoleId
+  }
+}
+
+// Key Vault Certificates Officer
+resource keyvaultCertificateOfficerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, keyvaultCertificateOfficerRoleId)
+  properties: {
+    principalId: principalId
+    principalType: principalType
+    roleDefinitionId: keyvaultCertificateOfficerRoleId
   }
 }
