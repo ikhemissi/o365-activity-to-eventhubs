@@ -13,7 +13,7 @@ You need an Azure subscription for deploying Event Hubs, Azure Functions, and ot
 An App registration which grants access to the O365 management api.
 Please follow [this guide](https://learn.microsoft.com/en-us/office/office-365-management-api/get-started-with-office-365-management-apis) to create the App registration and to understand how the process works.
 
-Once you have created the App Registration, please [upload a PEM certificate] to the App Registration's certificates(https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app?tabs=certificate#add-credentials) to allow authentication with certificates instead of secrets.
+Once you have created the App Registration, please [upload a PEM certificate](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app?tabs=certificate#add-credentials) to the App Registration's certificates to allow authentication with certificates instead of secrets.
 The Function App will fetch the certificate from a KeyVault, so you can either create it directly in the KeyVault, or you can [import an existing certificate](https://learn.microsoft.com/en-us/azure/key-vault/certificates/tutorial-import-certificate?tabs=azure-portal#import-a-certificate-to-your-key-vault) to it.
 
 > [!IMPORTANT]  
@@ -47,6 +47,6 @@ Once the timer function gets triggered you should start getting new O365 audit e
 
 - [x] Support O365 audit logs
 - [x] Support Exchange Message Traces
-- [] Better setup documentation
+- [ ] Better setup documentation
 - [x] Store all secrets in Azure KeyVault
-- [] Use KV to sign authentication claims
+- [ ] Use KV to sign authentication claims
