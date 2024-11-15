@@ -9,15 +9,11 @@ param location string
 
 @minLength(1)
 @description('Event Hubs name')
-param eventHubName string = 'o365events'
+param eventHubName string = 'securityevents'
 
 @description('App registration client ID')
 @secure()
 param entraAppClientId string
-
-@description('App registration client secret')
-@secure()
-param entraAppClientSecret string
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -112,11 +108,19 @@ module indexerFunctionApp './functionapp.bicep' = {
         value: eventHub.outputs.fullyQualifiedNamespace
       }
       {
-        name: 'EVENT_HUB_NAME'
+        name: 'AUDIT_LOGS_EVENT_HUB_NAME'
         value: eventHubName
       }
       {
-        name: 'INDEXER_SCHEDULE'
+        name: 'MESSAGE_TRACES_EVENT_HUB_NAME'
+        value: eventHubName
+      }
+      {
+        name: 'AUDIT_LOGS_INDEXER_SCHEDULE'
+        value: ''
+      }
+      {
+        name: 'MESSAGE_TRACES_INDEXER_SCHEDULE'
         value: ''
       }
     ]

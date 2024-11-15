@@ -44,6 +44,41 @@ class AppRegistrationClient {
     const cca = await this.getCCA();
     return cca.acquireTokenByClientCredential({scopes: this.scopes});
   }
+
+  async request(url, method = 'GET', body = null) {
+    const token = await this.appRegistrationClient.getToken();
+    const options = {
+        method,
+        headers: {
+            'Authorization': `${token.tokenType} ${token.accessToken}`
+        }
+    };
+
+    if (body) {
+        options.body = JSON.stringify(body);
+        options.headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch data from ${url}. Status: ${response.status}. Content: ${await response.text()}`);
+    }
+
+    let data = [];
+
+    try {
+        data = await response.json();
+    }
+    catch (error) {
+        throw new Error(`Failed to parse response from ${url}. Error: ${error.message}`);
+    }
+
+    return {
+        data,
+        headers: response.headers,
+    };
+  }
 }
 
 module.exports = AppRegistrationClient;

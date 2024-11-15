@@ -45,6 +45,8 @@ Once the timer function gets triggered you should start getting new O365 audit e
 
 ## TODO
 
-- [] Support Exchange Message Traces
+- [x] Support O365 audit logs
+- [x] Support Exchange Message Traces
 - [] Better setup documentation
+- [x] Store all secrets in Azure KeyVault
 - [] Use KV to sign authentication claims

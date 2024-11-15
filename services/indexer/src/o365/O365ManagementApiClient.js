@@ -1,13 +1,11 @@
-const msal = require('@azure/msal-node');
 const AppRegistrationClient = require('../auth/AppRegistrationClient');
 
 const {
     ENTRA_APP_CLIENT_ID,
-    ENTRA_APP_CLIENT_SECRET,
     ENTRA_APP_CLIENT_CERTIFICATE_NAME,
     ENTRA_APP_CLIENT_CERTIFICATE_KEYVAULT_NAME,
     ENTRA_TENANT_ID,
-    O365_MANAGEMENT_API,
+    O365_MANAGEMENT_API = 'https://manage.office.com',
     O365_EVENT_TYPES,
     O365_IGNORED_SOURCES,
 } = process.env;
@@ -25,7 +23,7 @@ function extractArrayFromEnvVariable(commaSeparatedString, defaultValue = []) {
     return array;
 }
 
-class O365Client {
+class O365ManagementApiClient {
     constructor() {
         this.eventTypes = this.getEventTypes();
         this.ignoredSources = this.getIgnoredSources();
@@ -49,13 +47,13 @@ class O365Client {
             let eventListUri = this.activityEndpointUrl(`/subscriptions/content?contentType=${eventType}&startTime=${startTime}&endTime=${endTime}&PublisherIdentifier=${this.publisher}`);
 
             while (eventListUri !== null) {
-                const {headers, data: availableContent} = await this.request(eventListUri);
+                const {headers, data: availableContent} = await this.appRegistrationClient.request(eventListUri);
     
                 // https://learn.microsoft.com/en-us/office/office-365-management-api/office-365-management-activity-api-reference#pagination
                 eventListUri = headers.get('NextPageUri') || headers.get('NextPageUrl') || null;
     
                 for (const content of availableContent) {
-                    const {data: contentEvents} = await this.request(content.contentUri);
+                    const {data: contentEvents} = await this.appRegistrationClient.request(content.contentUri);
 
                     for (const event of contentEvents) {    
                         if (!this.ignoredSources.includes(event.Source)) {
@@ -71,7 +69,7 @@ class O365Client {
 
     async listSubscriptions() {
         const subscriptionListUri = this.activityEndpointUrl(`/subscriptions/list?PublisherIdentifier=${this.publisher}`);
-        const {data} = await this.request(subscriptionListUri);
+        const {data} = await this.appRegistrationClient.request(subscriptionListUri);
     
         return data;
     }
@@ -81,7 +79,7 @@ class O365Client {
     
         for (const eventType of this.eventTypes) {
             const eventTypeSubscriptionUri = this.activityEndpointUrl(`/subscriptions/start?contentType=${eventType}&PublisherIdentifier=${this.publisher}`);
-            const {data} = await this.request(eventTypeSubscriptionUri, 'POST');
+            const {data} = await this.appRegistrationClient.request(eventTypeSubscriptionUri, 'POST');
             results.push(data);
         }
     
@@ -111,41 +109,6 @@ class O365Client {
     activityEndpointUrl(endpoint) {
         return `${O365_MANAGEMENT_API}/api/v1.0/${ENTRA_TENANT_ID}/activity/feed${endpoint}`;
     }
-
-    async request(url, method = 'GET', body = null) {
-        const token = await this.appRegistrationClient.getToken();
-        const options = {
-            method,
-            headers: {
-                'Authorization': `${token.tokenType} ${token.accessToken}`
-            }
-        };
-
-        if (body) {
-            options.body = JSON.stringify(body);
-            options.headers['Content-Type'] = 'application/json';
-        }
-
-        const response = await fetch(url, options);
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch data from ${url}. Status: ${response.status}. Content: ${await response.text()}`);
-        }
-
-        let data = [];
-
-        try {
-            data = await response.json();
-        }
-        catch (error) {
-            throw new Error(`Failed to parse response from ${url}. Error: ${error.message}`);
-        }
-
-        return {
-            data,
-            headers: response.headers,
-        };
-    }
 }
 
-module.exports = O365Client;
+module.exports = O365ManagementApiClient;
