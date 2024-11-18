@@ -1,52 +1,98 @@
 # o365-activity-to-eventhubs
 
-Extract audit events from O365 management activity api and publish them to Event Hubs
+Fetch O365 audit logs and Exchange message traces and publish them to Event Hubs.
+
+Audit logs are fetched from the [Office 365 Management Activity API](https://learn.microsoft.com/en-us/office/office-365-management-api/office-365-management-activity-api-reference) using a Function App, whereas Exchange message traces are fetched Using [Office 365 Reporting web service](https://learn.microsoft.com/en-us/previous-versions/office/developer/o365-enterprise-developers/jj984335(v=office.15)).
+
+
+## Architecture
+
+This POC relies on the following services:
+- Azure Functions: pulling data from data sources (APIs) every 5 minutes (configurable) and adding these events to Event Hubs
+- Event Hubs: This is where all security events will be added. You can use a separate hub for each event type or share one event hub for all events.
+- Blob storage: Persist the state of succcessful last data synchronizations to enable fetching new data only and be able to retry failed fetch operations.
+- App registration: The Application which we will be using to access the reporting APIs of Office 365.
+- Key Vault: Ehere we will store the PEM certificate to authenticate the app.
+- Azure Monitor: We will rely on Application Insights and Log Analytics to observe the system, understand how the POC is behaving and locate potential issues.
+
+![Architecture diagram](./docs/assets/architecture.png)
+
 
 ## Pre-requisites
 
-#### Azure subscription
+### Azure subscription
 
-You need an Azure subscription for deploying Event Hubs, Azure Functions, and other backing resources.
+You need an Azure subscription for deploying all project resources like Event Hubs, Azure Functions, and other backing resources.
 
-#### O365 App registration
+You need to have enough permissions to:
+- deploy resources like the [Contributor role](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#contributor) on the subscription or resource group)
+- assign RBAC roles like the [User Access Administrator](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#user-access-administrator) or [Role Based Access Control Administrator role](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/privileged#role-based-access-control-administrator)
 
-An App registration which grants access to the O365 management api.
-Please follow [this guide](https://learn.microsoft.com/en-us/office/office-365-management-api/get-started-with-office-365-management-apis) to create the App registration and to understand how the process works.
 
-Once you have created the App Registration, please [upload a PEM certificate](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app?tabs=certificate#add-credentials) to the App Registration's certificates to allow authentication with certificates instead of secrets.
-The Function App will fetch the certificate from a KeyVault, so you can either create it directly in the KeyVault, or you can [import an existing certificate](https://learn.microsoft.com/en-us/azure/key-vault/certificates/tutorial-import-certificate?tabs=azure-portal#import-a-certificate-to-your-key-vault) to it.
+### Network access
+
+If you want to deploy the POC within a VNET, then please make sure that:
+- You have access to the VNET so that you can deploy the Function App code. Alternatively, please ensure that a CI/CD pipeline is available for deploying the code of the Function App while using VNETs.
+- You can download the npm dependencies defined in package-lock.json (directly from npmjs.org or via a proxy) so that you can package and deploy the Function App code.
+
+### Tools
+
+Ensure that you have the following tools installed:
+- [Azure Developer CLI (azd)](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd?tabs=winget-windows%2Cbrew-mac%2Cscript-linux&pivots=os-linux)
+- [NodeJS](https://nodejs.org/en)
+- [az cli](https://learn.microsoft.com/en-us/cli/azure/)
+
+## Setup
+
+### Resource provisioning
+
+Use `azd` to provision resources:
+
+```sh
+azd auth login
+azd provision
+```
+
+This will created all required resources in Azure.
+
+### Certificate creation
+
+Create a PEM certificate and add it to the deployed instance of Azure Key Vault.
+
+You can follow this [guide](https://learn.microsoft.com/en-us/azure/key-vault/certificates/quick-create-portal#add-a-certificate-to-key-vault) for creating a certificate in Azure Key Vault.
 
 > [!IMPORTANT]  
 > The Certificate must be in the PEM format
 
-#### Development environment
+You can download a copy of this certificate for the next step.
 
-You can use the provided Github codespace for a fast-start experience, it includes all the required tools.
-Alternatively, you can install [azd](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd?tabs=winget-windows%2Cbrew-mac%2Cscript-linux&pivots=os-linux) locally and you should be good to go.
+### O365 App registration
 
-## Deploying the solution
+The POC relies on an App registration to access the APIs of Office 365.
+The App registration must have access to both `Office 365 Management Activity API` and `Office 365 Reporting web service`.
 
-Create the resources on Azure:
+To do this, please create an App Registration on Entra ID by following this [guide](https://learn.microsoft.com/en-us/office/office-365-management-api/get-started-with-office-365-management-apis#register-your-application-in-microsoft-entra-id).
 
-```bash
-ENTRA_APP_CLIENT_ID=REPLACE_WITH_CLIENT_ID \
-azd provision
-```
+In addition to the permissions for `Office 365 Management Activity API` described in the article, you will also need to do the following steps to grant the App Registration access to the `Office 365 Reporting web service`:
 
-Then make sure the PEM certificate exists in the KeyVault and it was added to the App Registration.
+- Update the ``API Permissions` of the App Registratyion and assign it the role `ReportingWebService.Read.All`.
+- Assign the role `Security Reader` to the App Registration. To do this, you should open Entra ID, then select `Roles and administrators`, then locate and click on `Security Reader`. Finally, click on `Add assignments`, then `Select member(s)`, and select the App Registration.
 
-Finally deploy the code of the data indexing function:
+### App Registration certificate
 
-```bash
-azd deploy
-```
+Once the App Registration is granted access to both O365 APIs, you will now need to update the App Registration to allow authentication using the PEM certificate that you created before.
 
-Once the timer function gets triggered you should start getting new O365 audit events in Event Hubs.
+Go to the App Registration, then click on the blade menu `Certificates & secrets` then click on `Upload certificate`, and finally import the downloaded certificate and save changes.
 
-## TODO
 
-- [x] Support O365 audit logs
-- [x] Support Exchange Message Traces
-- [ ] Better setup documentation
-- [x] Store all secrets in Azure KeyVault
-- [ ] Use KV to sign authentication claims
+### Update Function App configuration
+
+Now that the Function App and its dependencies are deployed, we need to update the App Settings of the Function App.
+
+Please check the App Settings of the Function App, and make sure that the field `ENTRA_APP_CLIENT_ID` was updated with the Cliend ID of the App registration.
+
+### Deploying the app
+
+Use `azd deploy` to deploy the code of Function App to Azure.
+
+The deployment may take 1 or 2 minutes, but once that is done, the timer function gets triggered you should start getting new O365 audit events in Event Hubs.
