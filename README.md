@@ -53,7 +53,7 @@ azd auth login
 azd provision
 ```
 
-This will created all required resources in Azure.
+This will create all required resources in Azure.
 
 ### Certificate creation
 
@@ -73,10 +73,10 @@ The App registration must have access to both `Office 365 Management Activity AP
 
 To do this, please create an App Registration on Entra ID by following this [guide](https://learn.microsoft.com/en-us/office/office-365-management-api/get-started-with-office-365-management-apis#register-your-application-in-microsoft-entra-id).
 
-In addition to the permissions for `Office 365 Management Activity API` described in the article, you will also need to do the following steps to grant the App Registration access to the `Office 365 Reporting web service`:
+In addition to the permissions for `Office 365 Management Activity API` described in the guide above, you will also need to do the following steps to grant the App Registration access to the `Office 365 Reporting web service`:
 
-- Update the ``API Permissions` of the App Registratyion and assign it the role `ReportingWebService.Read.All`.
-- Assign the role `Security Reader` to the App Registration. To do this, you should open Entra ID, then select `Roles and administrators`, then locate and click on `Security Reader`. Finally, click on `Add assignments`, then `Select member(s)`, and select the App Registration.
+- Update the `API Permissions` of the App Registratyion and assign it the role `ReportingWebService.Read.All`.
+- Assign the role `Security Reader` to the App Registration. To do this, you should go to Entra ID, then select `Roles and administrators`, then locate and click on `Security Reader`. Finally, click on `Add assignments`, then `Select member(s)`, and select the App Registration.
 
 ### App Registration certificate
 
@@ -89,7 +89,11 @@ Go to the App Registration, then click on the blade menu `Certificates & secrets
 
 Now that the Function App and its dependencies are deployed, we need to update the App Settings of the Function App.
 
-Please check the App Settings of the Function App, and make sure that the field `ENTRA_APP_CLIENT_ID` was updated with the Cliend ID of the App registration.
+Please check the App Settings of the Function App and make sure all settings look good, you can do this by navigating to the Function App, then selecting the blade menu `Settings`, then clicking on `Environment variables`.
+
+Make sure the field `ENTRA_APP_CLIENT_ID` is set to the Cliend ID of the App registration.
+
+You will also need to update the value of `ENTRA_APP_CLIENT_CERTIFICATE_NAME` and set it to the name of the certificate which you have previously added to the App Registration.
 
 ### Deploying the app
 
