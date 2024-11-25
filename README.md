@@ -64,7 +64,11 @@ You can follow this [guide](https://learn.microsoft.com/en-us/azure/key-vault/ce
 > [!IMPORTANT]  
 > The Certificate must be in the PEM format
 
-You can download a copy of this certificate for the next step.
+You can download a copy of this certificate in the CER format for the next step.
+
+> [!IMPORTANT]  
+> Download the certificate in the CER format so that you can import it in the App Registration
+
 
 ### O365 App registration
 
@@ -75,14 +79,14 @@ To do this, please create an App Registration on Entra ID by following this [gui
 
 In addition to the permissions for `Office 365 Management Activity API` described in the guide above, you will also need to do the following steps to grant the App Registration access to the `Office 365 Reporting web service`:
 
-- Update the `API Permissions` of the App Registratyion and assign it the role `ReportingWebService.Read.All`.
+- Update the `API Permissions` of the App Registratyion and assign it the role `ReportingWebService.Read.All`. To do this, you should go to Entra ID, then select `Manage > App registrations`, then click on your App Registration and select `Manage > API Permissions`, then click on `Add permission`, select the tab `APIs my organization uses`, locate and click on `Office 365 Exchange Online`, and then `Application permissions`, and lastly select `ReportingWebService.Read.All`.
 - Assign the role `Security Reader` to the App Registration. To do this, you should go to Entra ID, then select `Roles and administrators`, then locate and click on `Security Reader`. Finally, click on `Add assignments`, then `Select member(s)`, and select the App Registration.
 
 ### App Registration certificate
 
 Once the App Registration is granted access to both O365 APIs, you will now need to update the App Registration to allow authentication using the PEM certificate that you created before.
 
-Go to the App Registration, then click on the blade menu `Certificates & secrets` then click on `Upload certificate`, and finally import the downloaded certificate and save changes.
+Go to the App Registration, then click on the blade menu `Certificates & secrets` then click on `Upload certificate`, and finally import the downloaded CER certificate and save changes.
 
 
 ### Update Function App configuration
