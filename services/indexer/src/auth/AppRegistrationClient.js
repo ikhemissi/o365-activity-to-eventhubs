@@ -46,7 +46,7 @@ class AppRegistrationClient {
   }
 
   async request(url, method = 'GET', body = null) {
-    const token = await this.appRegistrationClient.getToken();
+    const token = await this.getToken();
     const options = {
         method,
         headers: {
