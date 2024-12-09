@@ -5,6 +5,8 @@ const {
     ENTRA_APP_CLIENT_CERTIFICATE_NAME,
     ENTRA_APP_CLIENT_CERTIFICATE_KEYVAULT_NAME,
     ENTRA_TENANT_ID,
+    APP_PROXY_URI,
+    APP_PROXY_TOKEN,
     EXCHANGE_REPORTING_API = 'https://reports.office365.com/ecp/reportingwebservice/reporting.svc',
     EXCHANGE_REPORTING_SCOPE = 'https://outlook.office365.com/.default',
 } = process.env;
@@ -19,6 +21,8 @@ class ExchangeMessageTraceClient {
             scopes: [
                 EXCHANGE_REPORTING_SCOPE,
             ],
+            proxyUri: APP_PROXY_URI,
+            proxyToken: APP_PROXY_TOKEN,
         });
     }
 

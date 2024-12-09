@@ -35,6 +35,17 @@ If you want to deploy the POC within a VNET, then please make sure that:
 - You have access to the VNET so that you can deploy the Function App code. Alternatively, please ensure that a CI/CD pipeline is available for deploying the code of the Function App while using VNETs.
 - You can download the npm dependencies defined in package-lock.json (directly from npmjs.org or via a proxy) so that you can package and deploy the Function App code.
 
+### Proxy
+
+You can specify a proxy to use for all data fetching requests (o365 audit logs + exchange message traces) using the environment variables `APP_PROXY_URI` and `APP_PROXY_TOKEN` (optional).
+
+**APP_PROXY_URI**:
+The expected format for `APP_PROXY_URI` is `https://proxy:port`.
+
+**APP_PROXY_TOKEN**:
+The expected format for `APP_PROXY_TOKEN` (optional) is the same type of content for the `Authorization` header.
+For example, you can use `Bearer xxxx` or `Basic <base64-encoded-credentials>`.
+
 ### Tools
 
 Ensure that you have the following tools installed:

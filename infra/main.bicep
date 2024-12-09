@@ -123,6 +123,14 @@ module indexerFunctionApp './functionapp.bicep' = {
         name: 'MESSAGE_TRACES_INDEXER_SCHEDULE'
         value: ''
       }
+      {
+        name: 'APP_PROXY_URI'
+        value: ''
+      }
+      {
+        name: 'APP_PROXY_TOKEN'
+        value: ''
+      }
     ]
   }
 }

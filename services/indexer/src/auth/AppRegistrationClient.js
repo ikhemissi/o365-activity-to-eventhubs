@@ -1,10 +1,11 @@
 const { X509Certificate } = require('node:crypto');
+const { ProxyAgent } = require('undici');
 const { DefaultAzureCredential } = require('@azure/identity');
 const { SecretClient } = require('@azure/keyvault-secrets');
 const { ConfidentialClientApplication } = require('@azure/msal-node');
 
 class AppRegistrationClient {
-  constructor({ clientId, tenantId, vaultName, certificateName, scopes = [], loginUrl = 'https://login.microsoftonline.com' }) {
+  constructor({ clientId, tenantId, vaultName, certificateName, scopes = [], loginUrl = 'https://login.microsoftonline.com', proxyUri = '', proxyToken = '' }) {
     this.clientId = clientId;
     this.tenantId = tenantId;
     this.vaultName = vaultName;
@@ -12,6 +13,18 @@ class AppRegistrationClient {
     this.scopes = scopes;
     this.loginUrl = loginUrl;
     this.cca = null;
+    this.proxy = null;
+    if (proxyUri) {
+        const proxyOptions = {
+            uri: proxyUri,
+        };
+
+        if (proxyToken) {
+            proxyOptions.token = proxyToken;
+        }
+
+        this.proxy = new ProxyAgent(proxyOptions)
+    }
   }
 
   async getCCA() {
@@ -57,6 +70,10 @@ class AppRegistrationClient {
     if (body) {
         options.body = JSON.stringify(body);
         options.headers['Content-Type'] = 'application/json';
+    }
+
+    if (this.proxy) {
+        options.dispatcher = this.proxy;
     }
 
     const response = await fetch(url, options);
