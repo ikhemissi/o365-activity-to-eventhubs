@@ -37,6 +37,11 @@ class AppRegistrationClient {
     const certificateSecret = await secretClient.getSecret(this.certificateName);
 
     const privateKey = certificateSecret?.value.split('-----BEGIN CERTIFICATE-----\n')[0];
+
+    if (!privateKey) {
+      throw new Error(`Failed to retrieve private key. The key is empty or invalid.`);
+    }
+    
     const x509Certificate = new X509Certificate(certificateSecret?.value);
     
     this.cca = new ConfidentialClientApplication({
@@ -54,8 +59,13 @@ class AppRegistrationClient {
   }
   
   async getToken() {
-    const cca = await this.getCCA();
-    return cca.acquireTokenByClientCredential({scopes: this.scopes});
+    try {
+      const cca = await this.getCCA();
+      return await cca.acquireTokenByClientCredential({scopes: this.scopes});
+    }
+    catch (error) {
+      throw new Error(`Failed to retrieve token. Error: ${error.message}`);
+    }
   }
 
   async request(url, method = 'GET', body = null) {
