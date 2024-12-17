@@ -14,6 +14,8 @@ class AppRegistrationClient {
     this.loginUrl = loginUrl;
     this.cca = null;
     this.proxy = null;
+    this.proxyUri = proxyUri;
+
     if (proxyUri) {
         const proxyOptions = {
             uri: proxyUri,
@@ -52,7 +54,10 @@ class AppRegistrationClient {
                 thumbprint: x509Certificate.fingerprint.replace(/:/g, ''),
                 privateKey: privateKey,
             },
-        }
+        },
+        system: {
+          proxyUrl: this.proxyUri || undefined,
+        },
     });
 
     return this.cca;
