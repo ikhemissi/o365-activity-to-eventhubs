@@ -3,6 +3,7 @@ const { ProxyAgent } = require('undici');
 const { DefaultAzureCredential } = require('@azure/identity');
 const { SecretClient } = require('@azure/keyvault-secrets');
 const { ConfidentialClientApplication } = require('@azure/msal-node');
+const HttpClientWithProxy = require('./HttpClientWithProxy');
 
 class AppRegistrationClient {
   constructor({ clientId, tenantId, vaultName, certificateName, scopes = [], loginUrl = 'https://login.microsoftonline.com', proxyUri = '', proxyToken = '' }) {
@@ -25,7 +26,7 @@ class AppRegistrationClient {
             proxyOptions.token = proxyToken;
         }
 
-        this.proxy = new ProxyAgent(proxyOptions)
+        this.proxy = new ProxyAgent(proxyOptions);
     }
   }
 
@@ -46,19 +47,24 @@ class AppRegistrationClient {
     
     const x509Certificate = new X509Certificate(certificateSecret?.value);
     
-    this.cca = new ConfidentialClientApplication({
-        auth: {
-            clientId: this.clientId,
-            authority: `${this.loginUrl}/${this.tenantId}`,
-            clientCertificate: {
-                thumbprint: x509Certificate.fingerprint.replace(/:/g, ''),
-                privateKey: privateKey,
-            },
+    const ccaConfig = {
+      auth: {
+        clientId: this.clientId,
+        authority: `${this.loginUrl}/${this.tenantId}`,
+        clientCertificate: {
+            thumbprint: x509Certificate.fingerprint.replace(/:/g, ''),
+            privateKey: privateKey,
         },
-        system: {
-          proxyUrl: this.proxyUri || undefined,
-        },
-    });
+      },
+    };
+
+    if (this.proxyUri) {
+      ccaConfig.system = {
+          networkClient: new HttpClientWithProxy(this.proxyUri),
+      };
+    }
+
+    this.cca = new ConfidentialClientApplication(ccaConfig);
 
     return this.cca;
   }
